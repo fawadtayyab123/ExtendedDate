@@ -1,0 +1,29 @@
+import { Directive, Input } from "@angular/core";
+import { NG_VALIDATORS, Validator, ValidationErrors, AbstractControl, AsyncValidator, NG_ASYNC_VALIDATORS } from '@angular/forms';
+import { AccountServiceProxy } from "@src/app/service-proxies";
+import { Observable, of } from "rxjs";
+import { map } from 'rxjs/operators';
+import { HttpClient } from "@angular/common/http";
+import { AppConsts } from "../AppConsts";
+
+@Directive({
+    selector: '[emailAlreadyExist][ngModel]',
+    providers: [{ provide: NG_ASYNC_VALIDATORS, useExisting: EmailAlreadyExistDirective, multi: true }]
+})
+export class EmailAlreadyExistDirective implements AsyncValidator {
+
+    constructor(private http: HttpClient) {
+    }
+    validate(control: AbstractControl): Observable<ValidationErrors | null> {
+        const url = `${AppConsts.apiBaseUrl}/api/Account/IsEmailExist?emailAddress=` + control.value;
+        const obs = this.http.get<boolean>(url)
+            .pipe(
+                map((isUsed) => {
+                    return !isUsed ? null : {
+                        EmailExist: 'Email already exists.'
+                    };
+                })
+            );
+        return obs;
+    }
+}
